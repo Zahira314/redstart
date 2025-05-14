@@ -813,6 +813,19 @@ def _(
     video_out_1
     return
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ### Critique
+
+    Le résultat obtenu est cohérent : la fusée est en chute libre, immobile par rapport à son environnement, ce qui correspond au fait qu'il est uniquement soumis à son poids, sans frottements ni force de propulsion.
+
+Le dépassement de la ligne symbolique du sol est également logique, car cette ligne est fictive (représentative). Il est donc normal que la fusée puisse la traverser dans cette modélisation.
+    """
+    )
+    return
+
 
 @app.cell
 def _(
@@ -835,6 +848,18 @@ def _(
         num_frames_vid=num_frames_default, fps_vid=fps_default
     )
     video_out_2
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ### Critique
+
+    La force de propulsion est exactement égale au poids, ce qui maintient la fusée dans un état statique (équilibre) et l'empêche de bouger.
+    """
+    )
     return
 
 
@@ -861,6 +886,18 @@ def _(
     video_out_3
     return
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ### Critique :
+
+    Le déséquilibre de la fusée provient d'un couple induit par l'écart entre Φ et 0
+Lorsque l'angle est different de 0 , un moment de rotation se crée entre les extrémités de la fusée. 
+Ce désalignement rompt l'équilibre initial, provoquant une rotation incontrôlée jusqu'au crash.
+    """
+    )
+    return
 
 @app.cell
 def _(
@@ -880,6 +917,27 @@ def _(
         num_frames_vid=num_frames_default, fps_vid=fps_default
     )
     video_out_4
+    return
+    
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ### Critique
+
+    La poussée du réacteur augmente à l'approche du sol pour :
+Compenser l'accélération gravitationnelle
+En chute libre, la fusée est soumise uniquement à son poids (P=mg), ce qui la fait accélérer vers le sol.
+Pour freiner cette chute, le réacteur doit générer une force de poussée supérieure au poids (F>P), créant une accélération nette vers le haut.
+Réduire progressivement la vitesse
+Plus la fusée se rapproche du sol, plus sa vitesse acquise est grande (effet de l'accélération gravitationnelle).
+Pour annuler cette vitesse à l'atterrissage (v=0), la poussée doit être augmentée progressivement, suivant souvent une loi de décélération contrôlée (ex : guidage par feedback).
+Éviter un crash ou un rebond
+Une poussée trop faible ne compenserait pas assez la gravité → impact violent.
+Une poussée trop forte en début de freinage gaspillerait du carburant et pourrait provoquer un rebond.
+La solution optimale est donc d'adapter la poussée pour une décélération lisse jusqu'à l'arrêt complet au sol.
+    """
+    )
     return
 
 
