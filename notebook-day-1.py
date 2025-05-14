@@ -18,7 +18,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.image(src="public/images/redstart.png")
+    mo.image(src="redstart.png")
     return
 
 
@@ -92,7 +92,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.center(mo.image(src="public/images/geometry.svg"))
+    mo.center(mo.image(src="geometry.svg"))
     return
 
 
@@ -266,7 +266,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.image(src="public/images/CENTRE_DE_MASSE.png")
+    mo.image(src="CENTRE_DE_MASSE.png")
     return
 
 
