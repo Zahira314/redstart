@@ -513,6 +513,11 @@ def _(mo):
 
 
 @app.cell
+def _(mo):
+    mo.image(src="Explicationatterissagecontrole.png")
+    return
+
+@app.cell
 def _(M, g, l, np, plt, redstart_solve):
     def f_phi_controlled_landing(t, y_state):
 
