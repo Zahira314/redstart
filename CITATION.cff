@@ -1,8 +1,14 @@
 cff-version: 1.2.0
 message: "If you use this project, please cite it as below."
 authors:
-- family-names: "Boisgérault"
-  given-names: "Sébastien"
+- family-names: "SASLAMI"
+  given-names: "Zahira"
+- family-names: "ZOMAN"
+  given-names: "William"
+- family-names: "ELMHAIDI"
+  given-names: "Elmehdi"
+- family-names: "LOTFI"
+  given-names: "Imad"
   orcid: "https://orcid.org/0000-0003-4685-8099"
 title: "Redstart"
 version: 0.0.1
