@@ -71,7 +71,7 @@ def _():
     import autograd.numpy as np
     import autograd.numpy.linalg as la
     from autograd import isinstance, tuple
-    return FFMpegWriter, FuncAnimation, mpl, np, plt, scipy, tqdm
+    return FFMpegWriter, FuncAnimation, la, mpl, np, plt, scipy, tqdm
 
 
 @app.cell(hide_code=True)
@@ -959,6 +959,36 @@ def _(mo):
     return
 
 
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    ## Points d'équilibre
+
+
+    Un point d'équilibre $(x_e, \dot{x}_e, y_e, \dot{y}_e, \theta_e, \dot{\theta}_e)$ avec des entrées constantes $f_e, \phi_e$ est un état où toutes les dérivées par rapport au temps sont nulles.
+    $\dot{x}_e = 0$, $\dot{y}_e = 0$, $\dot{\theta}_e = 0$.
+    $\ddot{x}_e = 0$, $\ddot{y}_e = 0$, $\ddot{\theta}_e = 0$.
+
+    D'après les équations du mouvement :
+    $M \ddot{x}_e = -f_e \sin(\theta_e + \phi_e) = 0$. Comme $f_e > 0$, il faut $\sin(\theta_e + \phi_e) = 0$. Cela implique $\theta_e + \phi_e = k\pi$ pour un entier $k$.
+    Étant donné $|\theta_e| < \pi/2$ et $|\phi_e| < \pi/2$, la seule possibilité est $\theta_e + \phi_e = 0$, donc $\phi_e = -\theta_e$.
+
+    $M \ddot{y}_e = f_e \cos(\theta_e + \phi_e) - Mg = 0$. En utilisant $\theta_e + \phi_e = 0$, cela devient $f_e \cos(0) - Mg = 0 \implies f_e - Mg = 0$, donc $f_e = Mg$.
+
+    $J \ddot{\theta}_e = -\ell f_e \sin(\phi_e) = 0$. Comme $\ell > 0$ et $f_e = Mg > 0$, il faut $\sin(\phi_e) = 0$.
+    Cela implique $\phi_e = n\pi$ pour un entier $n$.
+    Étant donné $|\phi_e| < \pi/2$, la seule possibilité est $\phi_e = 0$.
+
+    En combinant $\phi_e = 0$ et $\phi_e = -\theta_e$, on obtient $\theta_e = 0$.
+
+    Ainsi, l'unique état d'équilibre dans les plages d'angle spécifiées est lorsque le propulseur est vertical ($\theta_e = 0$), ne tourne pas ($\dot{\theta}_e = 0$) et ne translate pas ($\dot{x}_e = 0, \dot{y}_e = 0$). Le centre de masse peut être à n'importe quelle position $(x_e, y_e)$. Pour les besoins du contrôle, l'équilibre pertinent est généralement au point d'atterrissage désiré, par exemple $(0, \ell)$, avec des vitesses et des angles nuls. L'état d'équilibre est $(x_e, 0, y_e, 0, 0, 0)$ pour tout $x_e, y_e$. Les entrées correspondantes sont $f_e = Mg$ et $\phi_e = 0$.
+
+    """
+    )
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
@@ -967,6 +997,93 @@ def _(mo):
 
     Introduce the error variables $\Delta x$, $\Delta y$, $\Delta \theta$, and $\Delta f$ and $\Delta \phi$ of the state and input values with respect to the generic equilibrium configuration.
     What are the linear ordinary differential equations that govern (approximately) these variables in a neighbourhood of the equilibrium?
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+
+    ##  Modèle linéarisé
+
+
+    Soit le vecteur d'état $z = [x, \dot{x}, y, \dot{y}, \theta, \dot{\theta}]^T$ et le vecteur d'entrée $u = [f, \phi]^T$.
+    La dynamique du système est $\dot{z} = F(z, u)$. L'équilibre est $(z_e, u_e)$, où $z_e = [x_e, 0, y_e, 0, 0, 0]^T$ et $u_e = [Mg, 0]^T$.
+    La dynamique linéarisée autour de l'équilibre est $\Delta \dot{z} \approx A \Delta z + B \Delta u$, où $\Delta z = z - z_e$, $\Delta u = u - u_e$, et $A = \frac{\partial F}{\partial z}|_{(z_e, u_e)}$, $B = \frac{\partial F}{\partial u}|_{(z_e, u_e)}$.
+
+    La dynamique est $F(z, u) = \begin{bmatrix}
+    \dot{x} \\ \frac{-f \sin(\theta + \phi)}{M} \\ \dot{y} \\ \frac{f \cos(\theta + \phi)}{M} - g \\ \dot{\theta} \\ \frac{-\ell f \sin \phi}{J}
+    \end{bmatrix}$.
+
+    Nous devons calculer les dérivées partielles et les évaluer à l'équilibre $(z_e, u_e) = (x_e, 0, y_e, 0, 0, 0)$ et $(Mg, 0)$.
+    Variables d'état $z_1=x, z_2=\dot{x}, z_3=y, z_4=\dot{y}, z_5=\theta, z_6=\dot{\theta}$.
+    Variables d'entrée $u_1=f, u_2=\phi$.
+
+    $A_{ij} = \frac{\partial \dot{z}_i}{\partial z_j}|_e$:
+    $A = \begin{bmatrix}
+    \partial \dot{x}/\partial x & \partial \dot{x}/\partial \dot{x} & \partial \dot{x}/\partial y & \partial \dot{x}/\partial \dot{y} & \partial \dot{x}/\partial \theta & \partial \dot{x}/\partial \dot{\theta} \\
+    \partial \ddot{x}/\partial x & \partial \ddot{x}/\partial \dot{x} & \partial \ddot{x}/\partial y & \partial \ddot{x}/\partial \dot{y} & \partial \ddot{x}/\partial \theta & \partial \ddot{x}/\partial \dot{\theta} \\
+    \partial \dot{y}/\partial x & \partial \dot{y}/\partial \dot{x} & \partial \dot{y}/\partial y & \partial \dot{y}/\partial \dot{y} & \partial \dot{y}/\partial \theta & \partial \dot{y}/\partial \dot{\theta} \\
+    \partial \ddot{y}/\partial x & \partial \ddot{y}/\partial \dot{x} & \partial \ddot{y}/\partial y & \partial \ddot{y}/\partial \dot{y} & \partial \ddot{y}/\partial \theta & \partial \ddot{y}/\partial \dot{\theta} \\
+    \partial \dot{\theta}/\partial x & \partial \dot{\theta}/\partial \dot{x} & \partial \dot{\theta}/\partial y & \partial \dot{\theta}/\partial \dot{y} & \partial \dot{\theta}/\partial \theta & \partial \dot{\theta}/\partial \dot{\theta} \\
+    \partial \ddot{\theta}/\partial x & \partial \ddot{\theta}/\partial \dot{x} & \partial \ddot{\theta}/\partial y & \partial \ddot{θ}/\partial \dot{y} & \partial \ddot{\theta}/\partial \theta & \partial \ddot{\theta}/\partial \dot{\theta}
+    \end{bmatrix}$
+
+    $\dot{x} = \dot{x}$: $A_{12}=1$, les autres dans la rangée 1 sont 0.
+    $\ddot{x} = \frac{-f \sin(\theta + \phi)}{M}$: $\frac{\partial \ddot{x}}{\partial \theta} = \frac{-f \cos(\theta + \phi)}{M}$. À $f=Mg, \theta=0, \phi=0$: $\frac{-Mg \cos(0)}{M} = -g$. Les autres dans la rangée 2 par rapport à l'état sont 0.
+    $\dot{y} = \dot{y}$: $A_{34}=1$, les autres dans la rangée 3 sont 0.
+    $\ddot{y} = \frac{f \cos(\theta + \phi)}{M} - g$: $\frac{\partial \ddot{y}}{\partial \theta} = \frac{-f \sin(\theta + \phi)}{M}$. À $f=Mg, \theta=0, \phi=0$: 0. Les autres dans la rangée 4 par rapport à l'état sont 0.
+    $\dot{\theta} = \dot{\theta}$: $A_{56}=1$, les autres dans la rangée 5 sont 0.
+    $\ddot{\theta} = \frac{-\ell f \sin \phi}{J}$: Toutes les dérivées partielles par rapport aux variables d'état sont 0.
+
+    $A = \begin{bmatrix}
+    0 & 1 & 0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 0 & -g & 0 \\
+    0 & 0 & 0 & 1 & 0 & 0 \\
+    0 & 0 & 0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 0 & 0 & 1 \\
+    0 & 0 & 0 & 0 & 0 & 0
+    \end{bmatrix}$
+
+    $B_{ij} = \frac{\partial \dot{z}_i}{\partial u_j}|_e$:
+    $B = \begin{bmatrix}
+    \partial \dot{x}/\partial f & \partial \dot{x}/\partial \phi \\
+    \partial \ddot{x}/\partial f & \partial \ddot{x}/\partial \phi \\
+    \partial \dot{y}/\partial f & \partial \dot{y}/\partial \phi \\
+    \partial \ddot{y}/\partial f & \partial \ddot{y}/\partial \phi \\
+    \partial \dot{\theta}/\partial f & \partial \dot{\theta}/\partial \phi \\
+    \partial \ddot{\theta}/\partial f & \partial \ddot{\theta}/\partial \phi
+    \end{bmatrix}$
+
+    $\dot{x} = \dot{x}$: les partielles par rapport aux entrées sont 0. La rangée 1 de B est [0, 0].
+    $\ddot{x} = \frac{-f \sin(\theta + \phi)}{M}$: $\frac{\partial \ddot{x}}{\partial f} = \frac{-\sin(\theta + \phi)}{M}$. À $\theta=0, \phi=0$: 0. $\frac{\partial \ddot{x}}{\partial \phi} = \frac{-f \cos(\theta + \phi)}{M}$. À $f=Mg, \theta=0, \phi=0$: $-g$. La rangée 2 de B est [0, -g].
+    $\dot{y} = \dot{y}$: les partielles par rapport aux entrées sont 0. La rangée 3 de B est [0, 0].
+    $\ddot{y} = \frac{f \cos(\theta + \phi)}{M} - g$: $\frac{\partial \ddot{y}}{\partial f} = \frac{\cos(\theta + \phi)}{M}$. À $\theta=0, \phi=0$: $1/M$. $\frac{\partial \ddot{y}}{\partial \phi} = \frac{-f \sin(\theta + \phi)}{M}$. À $f=Mg, \theta=0, \phi=0$: 0. La rangée 4 de B est [1/M, 0].
+    $\dot{\theta} = \dot{\theta}$: les partielles par rapport aux entrées sont 0. La rangée 5 de B est [0, 0].
+    $\ddot{\theta} = \frac{-\ell f \sin \phi}{J}$: $\frac{\partial \ddot{\theta}}{\partial f} = \frac{-\ell \sin \phi}{J}$. À $\phi=0$: 0. $\frac{\partial \ddot{\theta}}{\partial \phi} = \frac{-\ell f \cos \phi}{J}$. À $f=Mg, \phi=0$: $\frac{-\ell Mg}{J}$. La rangée 6 de B est [0, $-\ell Mg/J$].
+    Rappel : $J = M\ell^2/3$, donc $-\ell Mg/J = -\ell Mg / (M\ell^2/3) = -3g/\ell$.
+
+    $B = \begin{bmatrix}
+    0 & 0 \\
+    0 & -g \\
+    0 & 0 \\
+    1/M & 0 \\
+    0 & 0 \\
+    0 & -3g/\ell
+    \end{bmatrix}$
+
+    Les EDO linéarisées sont :
+    $\Delta \dot{x} = \Delta \dot{x}$
+    $\Delta \ddot{x} = -g \Delta \theta - g \Delta \phi$
+    $\Delta \dot{y} = \Delta \dot{y}$
+    $\Delta \ddot{y} = \frac{1}{M} \Delta f$
+    $\Delta \dot{\theta} = \Delta \dot{\theta}$
+    $\Delta \ddot{\theta} = -\frac{3g}{\ell} \Delta \phi$
+
+
     """
     )
     return
@@ -985,6 +1102,34 @@ def _(mo):
     return
 
 
+@app.cell
+def _(M, g, l, np):
+
+    A = np.array([
+        [0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, -g, 0],
+        [0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 0, 0]
+    ])
+
+    B = np.array([
+        [0, 0],
+        [0, -g],
+        [0, 0],
+        [1/M, 0],
+        [0, 0],
+        [0, -3*g/l]
+    ])
+
+    print("Matrice A :")
+    print(A)
+    print("\nMatrice B :")
+    print(B)
+    return A, B
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
@@ -994,6 +1139,19 @@ def _(mo):
     Is the generic equilibrium asymptotically stable?
     """
     )
+    return
+
+
+@app.cell
+def _(A, la, np):
+    eigenvalues = la.eigvals(A)
+    print("Valeurs propres de A :")
+    print(eigenvalues)
+
+    if np.all(np.real(eigenvalues) < 0):
+        print("\nL'équilibre est asymptotiquement stable (toutes les valeurs propres ont des parties réelles strictement négatives).")
+    else:
+        print("\nL'équilibre n'est PAS asymptotiquement stable (certaines valeurs propres ont des parties réelles non négatives).")
     return
 
 
@@ -1009,6 +1167,30 @@ def _(mo):
     return
 
 
+@app.cell
+def _(A, B, la, np):
+    n = A.shape[0] 
+    C = B
+    A_power_B = B 
+    for i in range(1, n):
+        A_power_B = A @ A_power_B
+        C = np.hstack((C, A_power_B))
+
+    print("Matrice de commandabilité C :")
+
+    rank_C = la.matrix_rank(C)
+    print(f"\nRang de C : {rank_C}")
+    print(f"Dimension de l'état n : {n}")
+
+    if rank_C == n:
+        print("\nLe système est commandable (le rang de C est égal à la dimension de l'état).")
+    else:
+        print("\nLe système n'est PAS commandable (le rang de C est inférieur à la dimension de l'état).")
+
+
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
@@ -1021,6 +1203,11 @@ def _(mo):
     Check the controllability of this new system.
     """
     )
+    return
+
+
+@app.cell
+def _():
     return
 
 
