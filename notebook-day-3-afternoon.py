@@ -1994,6 +1994,28 @@ def _(mo):
     return
 
 
+@app.cell
+def _(M, g, l, np):
+    def T(x, dx, y, dy, theta, dtheta, z, dz):
+
+        h_x = x - (l / 3) * np.sin(theta)
+        h_y = y + (l / 3) * np.cos(theta)
+
+        dh_x = dx - (l / 3) * np.cos(theta) * dtheta
+        dh_y = dy - (l / 3) * np.sin(theta) * dtheta
+
+        d2h_x = (z / M) * np.sin(theta)
+        d2h_y = (z / M) * (-np.cos(theta)) - g
+
+        d3h_x = (z * dtheta / M) * np.cos(theta) + (dz / M) * np.sin(theta)
+        d3h_y = (z * dtheta / M) * np.sin(theta) - (dz / M) * np.cos(theta)
+
+        return h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y
+
+
+    return (T,)
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
@@ -2007,6 +2029,167 @@ def _(mo):
     """
     )
     return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Étant donné les relations suivantes entre les dérivées de la sortie \(h\) et l’état \(\bigl[x,\dot x, y,\dot y,\theta,\dot\theta,z,\dot z\bigr]\) :
+
+    1.  \(h_x = x - \tfrac{\ell}{3}\sin\theta\)  
+    2.  \(h_y = y + \tfrac{\ell}{3}\cos\theta\)  
+    3.  \(\dot h_x = \dot x - \tfrac{\ell}{3}\,\dot\theta\cos\theta\)  
+    4.  \(\dot h_y = \dot y - \tfrac{\ell}{3}\,\dot\theta\sin\theta\)  
+    5.  \(\ddot h_x = \tfrac{z}{M}\,\sin\theta\)  
+    6.  \(\ddot h_y = -\,\tfrac{z}{M}\,\cos\theta \;-\; g\)  
+    7.  \(\dddot h_x = \tfrac{z\,\dot\theta}{M}\cos\theta \;+\; \tfrac{\dot z}{M}\sin\theta\)  
+    8.  \(\dddot h_y = \tfrac{z\,\dot\theta}{M}\sin\theta \;-\; \tfrac{\dot z}{M}\cos\theta\)  
+
+    On suppose \(z<0\). Montrons comment remonter de \(\{h,\dot h,\ddot h,\dddot h\}\) à l’état complet.
+
+    ---
+
+    #### Étape 1 : extraire \(z\) et \(\theta\) de \(\ddot h\)
+
+    Définissons  
+
+    \[
+    V_x = \ddot h_x,\quad
+    V_y = \ddot h_y + g.
+    \]
+
+    Alors, d’après (5) et (6) :
+
+    \[
+    M\,V_x = z\sin\theta,
+    \quad
+    M\,V_y = -\,z\cos\theta.
+    \]
+
+    En sommant les carrés :
+
+    \[
+    (MV_x)^2 + (MV_y)^2 
+    = z^2(\sin^2\theta + \cos^2\theta)
+    = z^2,
+    \]
+
+    d’où, comme \(z<0\),
+
+    \[
+    \boxed{z = -\,M\,\sqrt{V_x^2 + V_y^2}
+    = -\,M\,\sqrt{\ddot h_x^2 + (\ddot h_y + g)^2}.}
+    \]
+
+    Puis :
+
+    \[
+    \sin\theta = \frac{M\,V_x}{z},
+    \quad
+    \cos\theta = -\,\frac{M\,V_y}{z},
+    \]
+
+    et donc
+
+    (la fonction atan2 à deux arguments est une variante de la fonction arctan classique utile pour ce cas.)
+
+    \[
+    \boxed{\theta = \operatorname{atan2}\!\bigl(\sin\theta,\cos\theta\bigr)
+    = \operatorname{atan2}\!\bigl(\ddot h_x, -(\ddot h_y + g)\bigr).}
+    \]
+
+
+    ---
+
+    #### Étape 2 : extraire \(\dot z\) et \(\dot\theta\) de \(\dddot h\)
+
+    D’après (7) et (8) :
+
+    \[
+    \begin{cases}
+    M\,\dddot h_x = z\,\dot\theta\cos\theta + \dot z\,\sin\theta,\\[4pt]
+    M\,\dddot h_y = z\,\dot\theta\sin\theta - \dot z\,\cos\theta.
+    \end{cases}
+    \]
+
+    — Multiplier la première par \(\sin\theta\) et la seconde par \(\cos\theta\), puis **soustraire** la seconde de la première :
+
+    \[
+    \dot z
+    = M\bigl(\dddot h_x\,\sin\theta - \dddot h_y\,\cos\theta\bigr).
+    \]
+
+    — Multiplier la première par \(\cos\theta\) et la seconde par \(\sin\theta\), puis **additionner** :
+
+    \[
+    z\,\dot\theta
+    = M\bigl(\dddot h_x\,\cos\theta + \dddot h_y\,\sin\theta\bigr),
+    \quad
+    \dot\theta = \frac{M}{z}\bigl(\dddot h_x\,\cos\theta + \dddot h_y\,\sin\theta\bigr).
+    \]
+
+    ---
+
+    #### Étape 3 : extraire \(\dot x\) et \(\dot y\) de \(\dot h\)
+
+    D’après (3) et (4) :
+
+    \[
+    \boxed{\dot x = \dot h_x + \tfrac{\ell}{3}\,\dot\theta\cos\theta,\quad
+    \dot y = \dot h_y + \tfrac{\ell}{3}\,\dot\theta\sin\theta.}
+    \]
+
+    ---
+
+    #### Étape 4 : extraire \(x\) et \(y\) de \(h\)
+
+    D’après (1) et (2) :
+
+    \[
+    \boxed{x = h_x + \tfrac{\ell}{3}\,\sin\theta,\quad
+    y = h_y - \tfrac{\ell}{3}\,\cos\theta.}
+    \]
+
+    ---
+
+    **Conclusion :** sous l’hypothèse \(z<0\), les dérivées  
+    \(\{h,\dot h,\ddot h,\dddot h\}\) déterminent de façon unique  
+    \(\{x,\dot x,y,\dot y,\theta,\dot\theta,z,\dot z\}\).
+
+    """
+    )
+    return
+
+
+@app.cell
+def _(M, g, l, np):
+    def T_inv(h_x, h_y, dh_x, dh_y, d2h_x, d2h_y, d3h_x, d3h_y):
+        Vx = M * d2h_x
+        Vy = M * (d2h_y + g)
+        z_squared = Vx**2 + Vy**2
+        if z_squared < 1e-9:
+
+             raise ValueError("Computed z is non-negative or near zero, violating the assumption z < 0.")
+        else:
+            z = -np.sqrt(z_squared)
+        theta = np.arctan2(Vy, Vx) - np.pi / 2.0
+        theta = np.arctan2(-d2h_x, d2h_y + g)
+
+        dz = M * (d3h_x * np.sin(theta) - d3h_y * np.cos(theta))
+
+        if np.abs(z) < 1e-9:
+            dtheta = 0.0
+        else:
+            dtheta = M * (d3h_x * np.cos(theta) + d3h_y * np.sin(theta)) / z
+
+        x = h_x + (l / 3.0) * np.sin(theta)
+        y = h_y - (l / 3.0) * np.cos(theta)
+        dx = dh_x + (l / 3.0) * np.cos(theta) * dtheta
+        dy = dh_y + (l / 3.0) * np.sin(theta) * dtheta
+        return x, dx, y, dy, theta, dtheta, z, dz
+
+    return (T_inv,)
 
 
 @app.cell(hide_code=True)
@@ -2044,6 +2227,156 @@ def _(mo):
     that returns a function `fun` such that `fun(t)` is a value of `x, dx, y, dy, theta, dtheta, z, dz, f, phi` at time `t` that match the initial and final values provided as arguments to `compute`.
     """
     )
+    return
+
+
+@app.cell
+def _(M, R, T, T_inv, l, np):
+    def poly7_coeffs(val0, dval0, d2val0, d3val0, valtf, dvaltf, d2valtf, d3valtf, tf):
+
+        a0 = val0
+        a1 = dval0
+        a2 = d2val0 / 2.0
+        a3 = d3val0 / 6.0
+
+        rhs = np.zeros(4)
+        rhs[0] = valtf - (a0 + a1*tf + a2*tf**2 + a3*tf**3)
+        rhs[1] = dvaltf - (a1 + 2*a2*tf + 3*a3*tf**2)
+        rhs[2] = d2valtf - (2*a2 + 6*a3*tf)
+        rhs[3] = d3valtf - (6*a3)
+
+        matrix = np.zeros((4, 4))
+        matrix[0, :] = [tf**4, tf**5, tf**6, tf**7]
+        matrix[1, :] = [4*tf**3, 5*tf**4, 6*tf**5, 7*tf**6]
+        matrix[2, :] = [12*tf**2, 20*tf**3, 30*tf**4, 42*tf**5]
+        matrix[3, :] = [24*tf**1, 60*tf**2, 120*tf**3, 210*tf**4]
+
+        try:
+            a4, a5, a6, a7 = np.linalg.solve(matrix, rhs)
+        except np.linalg.LinAlgError as e:
+            print(f"Error solving polynomial coefficients: {e}")
+            print(f"Matrix:\n{matrix}")
+            print(f"RHS:\n{rhs}")
+            raise e 
+
+        return np.array([a0, a1, a2, a3, a4, a5, a6, a7])
+
+    def poly_eval(coeffs, t, derivative_order=0):
+        p_coeffs = np.copy(coeffs)
+        for k in range(derivative_order):
+            if k + 1 > len(p_coeffs) - derivative_order + k:
+
+                 return 0.0 
+
+            for i in range(k + 1, len(p_coeffs)):
+                p_coeffs[i] = p_coeffs[i] * (i - k)
+
+        val = 0.0
+        t_power = 1.0
+
+        val = 0.0
+        for i in range(derivative_order, len(coeffs)):
+            coeff = coeffs[i]
+            factorial_ratio = 1.0
+            for k in range(i, i - derivative_order, -1):
+                 factorial_ratio *= k
+
+            val += coeff * factorial_ratio * (t**(i - derivative_order))
+
+        return val
+    def compute(
+        x_0,
+        dx_0,
+        y_0,
+        dy_0,
+        theta_0,
+        dtheta_0,
+        z_0,
+        dz_0,
+        x_tf,
+        dx_tf,
+        y_tf,
+        dy_tf,
+        theta_tf,
+        dtheta_tf,
+        z_tf,
+        dz_tf,
+        tf,
+    ):
+
+        if tf <= 0:
+            raise ValueError("Final time tf must be positive.")
+
+        h_x0, h_y0, dh_x0, dh_y0, d2h_x0, d2h_y0, d3h_x0, d3h_y0 = T(
+            x_0, dx_0, y_0, dy_0, theta_0, dtheta_0, z_0, dz_0
+        )
+        h_xtf, h_ytf, dh_xtf, dh_ytf, d2h_xtf, d2h_y_tf, d3h_xtf, d3h_y_tf = T(
+            x_tf, dx_tf, y_tf, dy_tf, theta_tf, dtheta_tf, z_tf, dz_tf
+        )
+
+        coeffs_hx = poly7_coeffs(h_x0, dh_x0, d2h_x0, d3h_x0, h_xtf, dh_xtf, d2h_xtf, d3h_xtf, tf)
+        coeffs_hy = poly7_coeffs(h_y0, dh_y0, d2h_y_tf, d3h_y_tf, h_ytf, dh_ytf, d2h_y_tf, d3h_y_tf, tf)
+
+
+        def fun(t):
+
+            if t < 0 or t > tf:
+
+                 return None 
+
+
+            h_x_t = poly_eval(coeffs_hx, t, 0)
+            h_y_t = poly_eval(coeffs_hy, t, 0)
+            dh_x_t = poly_eval(coeffs_hx, t, 1)
+            dh_y_t = poly_eval(coeffs_hy, t, 1)
+            d2h_x_t = poly_eval(coeffs_hx, t, 2)
+            d2h_y_t = poly_eval(coeffs_hy, t, 2)
+            d3h_x_t = poly_eval(coeffs_hx, t, 3)
+            d3h_y_t = poly_eval(coeffs_hy, t, 3)
+            d4h_x_t = poly_eval(coeffs_hx, t, 4) # This is u1
+            d4h_y_t = poly_eval(coeffs_hy, t, 4) # This is u2
+            u = np.array([d4h_x_t, d4h_y_t])
+
+
+            try:
+                x_t, dx_t, y_t, dy_t, theta_t, dtheta_t, z_t, dz_t = T_inv(
+                    h_x_t, h_y_t, dh_x_t, dh_y_t, d2h_x_t, d2h_y_t, d3h_x_t, d3h_y_t
+                )
+            except ValueError as e:
+
+                print(f"T_inv failed at t={t:.4f}: {e}")
+                return None
+
+            R_pi2_minus_theta = R(np.pi/2.0 - theta_t)
+            v_vec = M * R_pi2_minus_theta @ u + np.array([dtheta_t**2 * z_t, -2 * dtheta_t * dz_t])
+            v1_t, v2_t = v_vec
+
+
+            z_prime = z_t - M * (l / 3.0) * dtheta_t**2
+
+            if np.abs(z_t) < 1e-9:
+
+                 print(f"Auxiliary state z is near zero at t={t:.4f} during input calculation.")
+                 return None 
+
+            z_perp_term = (M * l * v2_t) / (3.0 * z_t)
+
+            R_theta_minus_pi2 = R(theta_t - np.pi/2.0)
+            f_vec = R_theta_minus_pi2 @ np.array([z_prime, z_perp_term])
+            fx_t, fy_t = f_vec
+
+            f_t = np.sqrt(fx_t**2 + fy_t**2)
+
+
+            phi_t = 0.0 
+            if f_t > 1e-9: 
+
+                phi_t = np.arctan2(fx_t, fy_t) - theta_t
+
+            return (x_t, dx_t, y_t, dy_t, theta_t, dtheta_t, z_t, dz_t, f_t, phi_t)
+
+
+        return fun
     return
 
 
